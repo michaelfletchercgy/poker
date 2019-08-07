@@ -10,8 +10,9 @@
 // of poker.
 
 
-#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
 pub enum Card {
+    Ace,
     Two,
     Three,
     Four,
@@ -23,8 +24,7 @@ pub enum Card {
     Ten,
     Jack,
     Queen,
-    King,
-    Ace
+    King
 }
 
 impl Card {

@@ -73,12 +73,12 @@ fn parse(reader:&mut dyn BufRead) -> Result<Vec<(PokerHand, PokerHand)>, ParseEr
 fn print_score(score:&Score) {
     match score {
         Score::FullHouse{pair: _, three_of_a_kind: _} => print!("FULLHOUSE"),
-        Score::Straight{} => print!("STRAIGHT"), 
-        Score::FourOfAKind(_) => print!("FOUROFAKIND"),
-        Score::TwoPair{low_pair: _, high_pair: _} => print!("TWOPAIR"),
-        Score::ThreeOfAKind(_) => print!("THREEOFAKIND"),
-        Score::Pair(_) => print!("PAIR"),
-        Score::HighCard(_) => print!("HIGHCARD"),
+        Score::Straight(_) => print!("STRAIGHT"), 
+        Score::FourOfAKind{..} => print!("FOUROFAKIND"),
+        Score::TwoPair{..} => print!("TWOPAIR"),
+        Score::ThreeOfAKind{..} => print!("THREEOFAKIND"),
+        Score::Pair{..} => print!("PAIR"),
+        Score::HighCard{..} => print!("HIGHCARD"),
     }
 }
 
