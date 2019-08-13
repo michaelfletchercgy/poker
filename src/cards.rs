@@ -28,11 +28,11 @@ impl Card {
     /// # Examples
     /// ```
     /// 
-    /// let two = poker::cards::Card::from_char(&'2');
-    /// let ten = poker::cards::Card::from_char(&'T');
-    /// let king = poker::cards::Card::from_char(&'K');
+    /// let two = poker::cards::Card::from_char('2');
+    /// let ten = poker::cards::Card::from_char('T');
+    /// let king = poker::cards::Card::from_char('K');
     /// ```
-    pub fn from_char(c:&char) -> Result<Card, String> {
+    pub fn from_char(c:char) -> Result<Card, String> {
         match c {
             '2' => Ok(Card::Two),
             '3' => Ok(Card::Three),
@@ -60,30 +60,30 @@ mod tests {
 
     #[test]
     fn card_from_char_err() {
-        assert_eq!(Card::from_char(&'$'), Result::Err(String::from("Character '$' is not valid.")));
+        assert_eq!(Card::from_char('$'), Result::Err(String::from("Character '$' is not valid.")));
     }
 
     #[test]
     fn card_from_char_ok() {
         let rules = [
-            (&'2', Card::Two),
-            (&'3', Card::Three),
-            (&'4', Card::Four),
-            (&'5', Card::Five),
-            (&'6', Card::Six),
-            (&'7', Card::Seven),
-            (&'8', Card::Eight),
-            (&'9', Card::Nine),
-            (&'T', Card::Ten),
-            (&'J', Card::Jack),
-            (&'Q', Card::Queen),
-            (&'K', Card::King),
-            (&'A', Card::Ace),
+            ('2', Card::Two),
+            ('3', Card::Three),
+            ('4', Card::Four),
+            ('5', Card::Five),
+            ('6', Card::Six),
+            ('7', Card::Seven),
+            ('8', Card::Eight),
+            ('9', Card::Nine),
+            ('T', Card::Ten),
+            ('J', Card::Jack),
+            ('Q', Card::Queen),
+            ('K', Card::King),
+            ('A', Card::Ace),
 
         ];
 
         for (character, card) in rules.iter() {
-            assert_eq!(Card::from_char(character), Result::Ok(card.clone()));
+            assert_eq!(Card::from_char(*character), Result::Ok(card.clone()));
         }
     }
 }

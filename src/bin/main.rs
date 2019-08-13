@@ -83,7 +83,7 @@ fn print_score(score:&Score) {
     }
 }
 
-fn print_ordering(ordering:&Ordering) {
+fn print_ordering(ordering:Ordering) {
     match ordering {
         Ordering::Less => { print!("a"); },
         Ordering::Equal => { print!("ab"); },
@@ -118,7 +118,7 @@ fn main() {
         print!(" ");
         print_score(&right_score);
         print!(" ");
-        print_ordering(&ordering);
+        print_ordering(ordering);
         println!("");
 
     }

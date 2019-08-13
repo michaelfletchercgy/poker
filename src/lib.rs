@@ -53,11 +53,11 @@ impl PokerHand {
         }
 
         Ok(PokerHand {
-            cards: [Card::from_char(&chars[0])?, 
-                Card::from_char(&chars[1])?, 
-                Card::from_char(&chars[2])?, 
-                Card::from_char(&chars[3])?, 
-                Card::from_char(&chars[4])?]
+            cards: [Card::from_char(chars[0])?, 
+                Card::from_char(chars[1])?, 
+                Card::from_char(chars[2])?, 
+                Card::from_char(chars[3])?, 
+                Card::from_char(chars[4])?]
         })
     }
 
