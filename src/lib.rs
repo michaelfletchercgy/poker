@@ -63,120 +63,120 @@ impl PokerHand {
 
     pub fn score(&self) -> Score {
         let mut cards: Vec<&Card> = Vec::new();
-            cards.extend(self.cards().iter());
-            cards.sort_by_key(|card| card_seq(card));
+        cards.extend(self.cards().iter());
+        cards.sort_by_key(|card| card_seq(card));
 
-            // Count the number of each card.  
-            let mut counts: BTreeMap<&Card, usize> = BTreeMap::new();
-            for card in &cards {
-                counts.entry(card).and_modify(|e| *e += 1).or_insert(1);
+        // Count the number of each card.  
+        let mut counts: BTreeMap<&Card, usize> = BTreeMap::new();
+        for card in &cards {
+            counts.entry(card).and_modify(|e| *e += 1).or_insert(1);
+        }
+
+        let mut pairs:Vec<Card> = Vec::new();
+        let mut three_of_a_kind: Option<Card> = None;
+        let mut four_of_a_kind: Option<Card> = None;
+        
+        for (card, count) in counts.iter() {
+            if *count == 2 {
+                pairs.push((*card).clone());
+            } else if *count == 3 {
+                three_of_a_kind = Some((*card).clone());
+            } else if *count == 4 {
+                four_of_a_kind = Some((*card).clone());
+            } else if *count == 1 {
+                // don't care
+            } else {
+                panic!(format!("Unexpected card card {}", count));
             }
+        }
 
-            let mut pairs:Vec<Card> = Vec::new();
-            let mut three_of_a_kind: Option<Card> = None;
-            let mut four_of_a_kind: Option<Card> = None;
-            
-            for (card, count) in counts.iter() {
-                if *count == 2 {
-                    pairs.push((*card).clone());
-                } else if *count == 3 {
-                    three_of_a_kind = Some((*card).clone());
-                } else if *count == 4 {
-                    four_of_a_kind = Some((*card).clone());
-                } else if *count == 1 {
-                    // don't care
-                } else {
-                    panic!(format!("Unexpected card card {}", count));
+        pairs.sort_by_key(|card| card_seq(card));
+
+
+        // Four of a kind
+        if four_of_a_kind.is_some() {
+            let mut kickers: Vec<Card> = Vec::new();
+            let c = four_of_a_kind.unwrap().clone();
+            for card in self.cards() {
+                if card != &c {
+                    kickers.push(card.clone());
                 }
             }
 
-            pairs.sort_by_key(|card| card_seq(card));
+            return Score::FourOfAKind{ four_of_a_kind: c, kicker: kickers[0].clone() };
+        }
 
+        // What's a full house?
+        if !pairs.is_empty() && three_of_a_kind.is_some() {
+            return Score::FullHouse{pair:pairs.last().unwrap().clone(), three_of_a_kind: three_of_a_kind.unwrap()};
+        }
 
-            // Four of a kind
-            if four_of_a_kind.is_some() {
-                let mut kickers: Vec<Card> = Vec::new();
-                let c = four_of_a_kind.unwrap().clone();
-                for card in self.cards() {
-                    if card != &c {
-                        kickers.push(card.clone());
-                    }
+        // Straight (Five Highh)
+        if cards[0] == &Card::Two &&
+            cards[1] == &Card::Three &&
+            cards[2] == &Card::Four &&
+            cards[3] == &Card::Five &&
+            cards[4] == &Card::Ace {
+            return Score::Straight(Card::Five);
+        }
+
+        // Straight (Ace High)
+        let first_card = card_seq(cards[0]);
+        if card_seq(cards[1]) == first_card + 1 &&
+            card_seq(cards[2]) == first_card + 2 &&
+            card_seq(cards[3]) == first_card + 3 &&
+            card_seq(cards[4]) == first_card + 4 {
+            return Score::Straight(cards[4].clone());
+        }
+
+        // Two pair
+        if pairs.len() == 2 {
+            let mut kickers: Vec<Card> = Vec::new();
+            for card in self.cards() {
+                if card != &pairs[0] && card != &pairs[1] {
+                    kickers.push(card.clone());
                 }
-
-                return Score::FourOfAKind{ four_of_a_kind: c, kicker: kickers[0].clone() };
             }
 
-            // What's a full house?
-            if !pairs.is_empty() && three_of_a_kind.is_some() {
-                return Score::FullHouse{pair:pairs.last().unwrap().clone(), three_of_a_kind: three_of_a_kind.unwrap()};
-            }
+            return Score::TwoPair{ low_pair:pairs[0].clone(), high_pair:pairs[1].clone(), kicker:kickers[0].clone()};
+        }
 
-            // Straight (Five Highh)
-            if cards[0] == &Card::Two &&
-                cards[1] == &Card::Three &&
-                cards[2] == &Card::Four &&
-                cards[3] == &Card::Five &&
-                cards[4] == &Card::Ace {
-                return Score::Straight(Card::Five);
-            }
-
-            // Straight (Ace High)
-            let first_card = card_seq(cards[0]);
-            if card_seq(cards[1]) == first_card + 1 &&
-                card_seq(cards[2]) == first_card + 2 &&
-                card_seq(cards[3]) == first_card + 3 &&
-                card_seq(cards[4]) == first_card + 4 {
-                return Score::Straight(cards[4].clone());
-            }
-
-            // Two pair
-            if pairs.len() == 2 {
-                let mut kickers: Vec<Card> = Vec::new();
-                for card in self.cards() {
-                    if card != &pairs[0] && card != &pairs[1] {
-                        kickers.push(card.clone());
-                    }
+        // Three of a kind
+        if three_of_a_kind.is_some() { // todo if let
+            let mut kickers: Vec<Card> = Vec::new();
+            let toc = three_of_a_kind.unwrap();
+            for card in self.cards() {
+                if card != &toc {
+                    kickers.push(card.clone());
                 }
-
-                return Score::TwoPair{ low_pair:pairs[0].clone(), high_pair:pairs[1].clone(), kicker:kickers[0].clone()};
             }
 
-            // Three of a kind
-            if three_of_a_kind.is_some() { // todo if let
-                let mut kickers: Vec<Card> = Vec::new();
-                let toc = three_of_a_kind.unwrap();
-                for card in self.cards() {
-                    if card != &toc {
-                        kickers.push(card.clone());
-                    }
+            kickers.sort_by_key(|card| card_seq(card));
+            return Score::ThreeOfAKind{card:toc, low_kicker:kickers[0].clone(), high_kicker:kickers[1].clone()};
+        }
+
+        // Pairs
+        if !pairs.is_empty() {
+            let mut kickers: Vec<Card> = Vec::new();
+            for card in self.cards() {
+                if card != &pairs[0] {
+                    kickers.push(card.clone());
                 }
-
-                kickers.sort_by_key(|card| card_seq(card));
-                return Score::ThreeOfAKind{card:toc, low_kicker:kickers[0].clone(), high_kicker:kickers[1].clone()};
             }
 
-            // Pairs
-            if !pairs.is_empty() {
-                let mut kickers: Vec<Card> = Vec::new();
-                for card in self.cards() {
-                    if card != &pairs[0] {
-                        kickers.push(card.clone());
-                    }
-                }
+            kickers.sort_by_key(|card| card_seq(card));
 
-                kickers.sort_by_key(|card| card_seq(card));
+            return Score::Pair{
+                card:pairs.last().unwrap().clone(),
+                kickers: [kickers[0].clone(), kickers[1].clone(), kickers[2].clone()]
 
-                return Score::Pair{
-                    card:pairs.last().unwrap().clone(),
-                    kickers: [kickers[0].clone(), kickers[1].clone(), kickers[2].clone()]
+            };
+        }
 
-                };
-            }
-
-            // Final score, just the highest card.
-            Score::HighCard{ card:cards[4].clone(),
-                kickers: [cards[0].clone(), cards[1].clone(), cards[2].clone(), cards[3].clone() ]
-            }
+        // Final score, just the highest card.
+        Score::HighCard{ card:cards[4].clone(),
+            kickers: [cards[0].clone(), cards[1].clone(), cards[2].clone(), cards[3].clone() ]
+        }
     }
 
     pub fn cards(&self) -> &[Card; 5] {
