@@ -1,15 +1,8 @@
-// TODO Module level docs
-//
-// Various functions and structures related to 52 deck cards.  This is generally
-// useful and not specific to any particular card game.
-//
-// You would find ordering, comparing cards and ranking in a module for a more 
-// particular card game.
-//
-// TODO this breakdown didn't really work because a a five card hand is a particularily
-// of poker.
+//! # cards
+//!
+//! `cards` is structures and functions for cards.
 
-
+/// A card from a standard deck of cards.
 #[derive(Debug, PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
 pub enum Card {
     Ace,
@@ -28,6 +21,17 @@ pub enum Card {
 }
 
 impl Card {
+    /// Crete a card from a character shorthand.
+    /// 
+    /// The numbered cards use their number except for 10 which is 'T'.
+    /// 
+    /// # Examples
+    /// ```
+    /// 
+    /// let two = poker::cards::Card::from_char(&'2');
+    /// let ten = poker::cards::Card::from_char(&'T');
+    /// let king = poker::cards::Card::from_char(&'K');
+    /// ```
     pub fn from_char(c:&char) -> Result<Card, String> {
         match c {
             '2' => Ok(Card::Two),
