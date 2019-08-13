@@ -232,35 +232,34 @@ pub fn compare_hands(left_score:&Score, right_score:&Score) -> Ordering {
     // for each hand.   
     match (left_score, right_score) {
         (Score::HighCard{card:left_card, kickers: left_kickers}, Score::HighCard{card:right_card, kickers: right_kickers}) => {
-            match cmp_cards(left_card, right_card)
-            {
+            match cmp_cards(left_card, right_card) {
                 Ordering:: Equal => match cmp_cards(&left_kickers[0], &right_kickers[0]) {
                     Ordering:: Equal => match cmp_cards(&left_kickers[1], &right_kickers[1]) {
                         Ordering:: Equal => match cmp_cards(&left_kickers[2], &right_kickers[2]) {
                             Ordering:: Equal => cmp_cards(&left_kickers[3], &right_kickers[3]),
-                            x => x
+                            less_or_greater => less_or_greater
                         },
-                        x => x
+                        less_or_greater => less_or_greater
                     },
-                    x => x
+                    less_or_greater => less_or_greater
                 },
-                x => x
+                less_or_greater => less_or_greater
             }
         },
         (Score::Pair{card:left_card, kickers: left_kickers}, Score::Pair{card:right_card, kickers: right_kickers}) => {
-            match cmp_cards(left_card, right_card)
-            {
+            match cmp_cards(left_card, right_card) {
                 Ordering:: Equal => match cmp_cards(&left_kickers[0], &right_kickers[0]) {
                     Ordering:: Equal => match cmp_cards(&left_kickers[1], &right_kickers[1]) {
                         Ordering:: Equal => cmp_cards(&left_kickers[2], &right_kickers[2]),
-                        x => x
+                        less_or_greater => less_or_greater
                     },
-                    x => x
+                    less_or_greater => less_or_greater
                 },
-                x => x
+                less_or_greater => less_or_greater
             }
         },
-        (Score::TwoPair{low_pair:left_low_pair, high_pair:left_high_pair, kicker:left_kicker}, Score::TwoPair{low_pair:right_low_pair, high_pair:right_high_pair, kicker:right_kicker}) => {
+        (Score::TwoPair{low_pair:left_low_pair, high_pair:left_high_pair, kicker:left_kicker}, 
+            Score::TwoPair{low_pair:right_low_pair, high_pair:right_high_pair, kicker:right_kicker}) => {
             match cmp_cards(left_high_pair, right_high_pair) {
                 Ordering::Less => Ordering::Less,
                 Ordering::Greater => Ordering::Greater,
@@ -274,14 +273,12 @@ pub fn compare_hands(left_score:&Score, right_score:&Score) -> Ordering {
         (Score::ThreeOfAKind{card:left_card, high_kicker:left_high_kicker, low_kicker:left_low_kicker}, 
             Score::ThreeOfAKind{card:right_card, high_kicker:right_high_kicker, low_kicker:right_low_kicker}) => {
             match cmp_cards(left_card, right_card) {
-                Ordering::Less => Ordering::Less,
-                Ordering::Greater => Ordering::Greater,
                 Ordering::Equal => 
                     match cmp_cards(left_high_kicker, right_high_kicker) {
-                        Ordering::Less => Ordering::Less,
-                        Ordering::Greater => Ordering::Greater,
-                        Ordering::Equal => cmp_cards(left_low_kicker, right_low_kicker)
-                    }
+                        Ordering::Equal => cmp_cards(left_low_kicker, right_low_kicker),
+                        less_or_greater => less_or_greater
+                    },
+                less_or_greater => less_or_greater
                 
             }
         },
