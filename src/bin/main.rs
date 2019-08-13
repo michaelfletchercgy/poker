@@ -110,8 +110,8 @@ fn main() {
     };
 
     for (left, right) in hands {
-        let left_score = poker::score(&left);
-        let right_score = poker::score(&right);
+        let left_score = left.score();
+        let right_score = right.score();
         let ordering = poker::compare_hands(&left_score, &right_score);
         
         print_score(&left_score);

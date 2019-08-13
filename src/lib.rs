@@ -61,6 +61,124 @@ impl PokerHand {
         })
     }
 
+    pub fn score(&self) -> Score {
+        let mut cards: Vec<&Card> = Vec::new();
+            cards.extend(self.cards().iter());
+            cards.sort_by_key(|card| card_seq(card));
+
+            // Count the number of each card.  
+            let mut counts: BTreeMap<&Card, usize> = BTreeMap::new();
+            for card in &cards {
+                counts.entry(card).and_modify(|e| *e += 1).or_insert(1);
+            }
+
+            let mut pairs:Vec<Card> = Vec::new();
+            let mut three_of_a_kind: Option<Card> = None;
+            let mut four_of_a_kind: Option<Card> = None;
+            
+            for (card, count) in counts.iter() {
+                if *count == 2 {
+                    pairs.push((*card).clone());
+                } else if *count == 3 {
+                    three_of_a_kind = Some((*card).clone());
+                } else if *count == 4 {
+                    four_of_a_kind = Some((*card).clone());
+                } else if *count == 1 {
+                    // don't care
+                } else {
+                    panic!(format!("Unexpected card card {}", count));
+                }
+            }
+
+            pairs.sort_by_key(|card| card_seq(card));
+
+
+            // Four of a kind
+            if four_of_a_kind.is_some() {
+                let mut kickers: Vec<Card> = Vec::new();
+                let c = four_of_a_kind.unwrap().clone();
+                for card in self.cards() {
+                    if card != &c {
+                        kickers.push(card.clone());
+                    }
+                }
+
+                return Score::FourOfAKind{ four_of_a_kind: c, kicker: kickers[0].clone() };
+            }
+
+            // What's a full house?
+            if !pairs.is_empty() && three_of_a_kind.is_some() {
+                return Score::FullHouse{pair:pairs.last().unwrap().clone(), three_of_a_kind: three_of_a_kind.unwrap()};
+            }
+
+            // Straight (Five Highh)
+            if cards[0] == &Card::Two &&
+                cards[1] == &Card::Three &&
+                cards[2] == &Card::Four &&
+                cards[3] == &Card::Five &&
+                cards[4] == &Card::Ace {
+                return Score::Straight(Card::Five);
+            }
+
+            // Straight (Ace High)
+            let first_card = card_seq(cards[0]);
+            if card_seq(cards[1]) == first_card + 1 &&
+                card_seq(cards[2]) == first_card + 2 &&
+                card_seq(cards[3]) == first_card + 3 &&
+                card_seq(cards[4]) == first_card + 4 {
+                return Score::Straight(cards[4].clone());
+            }
+
+            // Two pair
+            if pairs.len() == 2 {
+                let mut kickers: Vec<Card> = Vec::new();
+                for card in self.cards() {
+                    if card != &pairs[0] && card != &pairs[1] {
+                        kickers.push(card.clone());
+                    }
+                }
+
+                return Score::TwoPair{ low_pair:pairs[0].clone(), high_pair:pairs[1].clone(), kicker:kickers[0].clone()};
+            }
+
+            // Three of a kind
+            if three_of_a_kind.is_some() { // todo if let
+                let mut kickers: Vec<Card> = Vec::new();
+                let toc = three_of_a_kind.unwrap();
+                for card in self.cards() {
+                    if card != &toc {
+                        kickers.push(card.clone());
+                    }
+                }
+
+                kickers.sort_by_key(|card| card_seq(card));
+                return Score::ThreeOfAKind{card:toc, low_kicker:kickers[0].clone(), high_kicker:kickers[1].clone()};
+            }
+
+            // Pairs
+            if !pairs.is_empty() {
+                let mut kickers: Vec<Card> = Vec::new();
+                for card in self.cards() {
+                    if card != &pairs[0] {
+                        kickers.push(card.clone());
+                    }
+                }
+
+                kickers.sort_by_key(|card| card_seq(card));
+
+                return Score::Pair{
+                    card:pairs.last().unwrap().clone(),
+                    kickers: [kickers[0].clone(), kickers[1].clone(), kickers[2].clone()]
+
+                };
+            }
+
+            // Final score, just the highest card.
+            Score::HighCard{ card:cards[4].clone(),
+                kickers: [cards[0].clone(), cards[1].clone(), cards[2].clone(), cards[3].clone() ]
+            }
+    }
+
     pub fn cards(&self) -> &[Card; 5] {
         &self.cards
     }
@@ -86,127 +204,6 @@ fn card_seq(card: &Card) -> usize {
         Card::King => 13,
         Card::Ace => 14,
         
-    }
-}
-
-/**
- * Score this hand.
- */
-pub fn score(hand: &PokerHand) -> Score {
-    let mut cards: Vec<&Card> = Vec::new();
-    cards.extend(hand.cards().iter());
-    cards.sort_by_key(|card| card_seq(card));
-
-    // Count the number of each card.  
-    let mut counts: BTreeMap<&Card, usize> = BTreeMap::new();
-    for card in &cards {
-        counts.entry(card).and_modify(|e| *e += 1).or_insert(1);
-    }
-
-    let mut pairs:Vec<Card> = Vec::new();
-    let mut three_of_a_kind: Option<Card> = None;
-    let mut four_of_a_kind: Option<Card> = None;
-    
-    for (card, count) in counts.iter() {
-        if *count == 2 {
-            pairs.push((*card).clone());
-        } else if *count == 3 {
-            three_of_a_kind = Some((*card).clone());
-        } else if *count == 4 {
-            four_of_a_kind = Some((*card).clone());
-        } else if *count == 1 {
-            // don't care
-        } else {
-            panic!(format!("Unexpected card card {}", count));
-        }
-    }
-
-    pairs.sort_by_key(|card| card_seq(card));
-
-
-    // Four of a kind
-    if four_of_a_kind.is_some() {
-        let mut kickers: Vec<Card> = Vec::new();
-        let c = four_of_a_kind.unwrap().clone();
-        for card in hand.cards() {
-            if card != &c {
-                kickers.push(card.clone());
-            }
-        }
-
-        return Score::FourOfAKind{ four_of_a_kind: c, kicker: kickers[0].clone() };
-    }
-
-    // What's a full house?
-    if !pairs.is_empty() && three_of_a_kind.is_some() {
-        return Score::FullHouse{pair:pairs.last().unwrap().clone(), three_of_a_kind: three_of_a_kind.unwrap()};
-    }
-
-    // Straight (Five Highh)
-    if cards[0] == &Card::Two &&
-        cards[1] == &Card::Three &&
-        cards[2] == &Card::Four &&
-        cards[3] == &Card::Five &&
-        cards[4] == &Card::Ace {
-        return Score::Straight(Card::Five);
-    }
-
-    // Straight (Ace High)
-    let first_card = card_seq(cards[0]);
-    if card_seq(cards[1]) == first_card + 1 &&
-        card_seq(cards[2]) == first_card + 2 &&
-        card_seq(cards[3]) == first_card + 3 &&
-        card_seq(cards[4]) == first_card + 4 {
-        return Score::Straight(cards[4].clone());
-    }
-
-    // Two pair
-    if pairs.len() == 2 {
-        let mut kickers: Vec<Card> = Vec::new();
-        for card in hand.cards() {
-            if card != &pairs[0] && card != &pairs[1] {
-                kickers.push(card.clone());
-            }
-        }
-
-        return Score::TwoPair{ low_pair:pairs[0].clone(), high_pair:pairs[1].clone(), kicker:kickers[0].clone()};
-    }
-
-    // Three of a kind
-    if three_of_a_kind.is_some() { // todo if let
-        let mut kickers: Vec<Card> = Vec::new();
-        let toc = three_of_a_kind.unwrap();
-        for card in hand.cards() {
-            if card != &toc {
-                kickers.push(card.clone());
-            }
-        }
-
-        kickers.sort_by_key(|card| card_seq(card));
-        return Score::ThreeOfAKind{card:toc, low_kicker:kickers[0].clone(), high_kicker:kickers[1].clone()};
-    }
-
-    // Pairs
-    if !pairs.is_empty() {
-        let mut kickers: Vec<Card> = Vec::new();
-        for card in hand.cards() {
-            if card != &pairs[0] {
-                kickers.push(card.clone());
-            }
-        }
-
-        kickers.sort_by_key(|card| card_seq(card));
-
-        return Score::Pair{
-            card:pairs.last().unwrap().clone(),
-            kickers: [kickers[0].clone(), kickers[1].clone(), kickers[2].clone()]
-
-        };
-    }
-
-    // Final score, just the highest card.
-    Score::HighCard{ card:cards[4].clone(),
-        kickers: [cards[0].clone(), cards[1].clone(), cards[2].clone(), cards[3].clone() ]
     }
 }
 
@@ -315,42 +312,42 @@ mod tests {
 
     #[test]
     fn score_pair() {
-        assert_eq!(score(&PokerHand::from_str("23427").unwrap()), Score::Pair{ card:Card::Two, kickers:[Card::Three, Card::Four, Card::Seven]});
+        assert_eq!(PokerHand::from_str("23427").unwrap().score(), Score::Pair{ card:Card::Two, kickers:[Card::Three, Card::Four, Card::Seven]});
     }
 
     #[test]
     fn score_two_pair() {
-        assert_eq!(score(&PokerHand::from_str("3434A").unwrap()), Score::TwoPair{low_pair:Card::Three, high_pair:Card::Four, kicker:Card::Ace});
+        assert_eq!(PokerHand::from_str("3434A").unwrap().score(), Score::TwoPair{low_pair:Card::Three, high_pair:Card::Four, kicker:Card::Ace});
     }
 
     #[test]
     fn score_ace_high_straight() {
-       assert_eq!(score(&PokerHand::from_str("TJQKA").unwrap()), Score::Straight(Card::Ace));
+       assert_eq!(PokerHand::from_str("TJQKA").unwrap().score(), Score::Straight(Card::Ace));
     }
 
     #[test]
     fn score_five_high_straight() {
-       assert_eq!(score(&PokerHand::from_str("A2345").unwrap()), Score::Straight(Card::Five));
+       assert_eq!(PokerHand::from_str("A2345").unwrap().score(), Score::Straight(Card::Five));
     }
     
     #[test]
     fn score_high_card() {
-        assert_eq!(score(&PokerHand::from_str("23457").unwrap()), Score::HighCard{card:Card::Seven, kickers:[Card::Two, Card::Three, Card::Four, Card::Five]});
+        assert_eq!(PokerHand::from_str("23457").unwrap().score(), Score::HighCard{card:Card::Seven, kickers:[Card::Two, Card::Three, Card::Four, Card::Five]});
     }
 
     #[test]
     fn score_high_card_other_order() {
-        assert_eq!(score(&PokerHand::from_str("75432").unwrap()), Score::HighCard{card:Card::Seven, kickers:[Card::Two, Card::Three, Card::Four, Card::Five]});
+        assert_eq!(PokerHand::from_str("75432").unwrap().score(), Score::HighCard{card:Card::Seven, kickers:[Card::Two, Card::Three, Card::Four, Card::Five]});
     }
     
     #[test]
     fn score_high_card_ace() {
-        assert_eq!(score(&PokerHand::from_str("A235K").unwrap()), Score::HighCard{card:Card::Ace, kickers:[Card::Two, Card::Three, Card::Five, Card::King]});
+        assert_eq!(PokerHand::from_str("A235K").unwrap().score(), Score::HighCard{card:Card::Ace, kickers:[Card::Two, Card::Three, Card::Five, Card::King]});
     }
 
     #[test]
     fn score_four_of_a_king() {
-        assert_eq!(score(&PokerHand::from_str("A2222").unwrap()), Score::FourOfAKind{four_of_a_kind:Card::Two, kicker:Card::Ace});
+        assert_eq!(PokerHand::from_str("A2222").unwrap().score(), Score::FourOfAKind{four_of_a_kind:Card::Two, kicker:Card::Ace});
     }
 
 
